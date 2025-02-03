@@ -16,10 +16,10 @@ services:
   plugin_builder:
     build:
       context: ./krakend-config/plugins
-      dockerfile: Dockerfile  # Ensure you have a Dockerfile in this directory
+      dockerfile: Dockerfile # Ensure you have a Dockerfile in this directory
     container_name: go_plugin_builder
     volumes:
-      - ./krakend-config/plugins:/etc/krakend/plugins  # Share the plugins directory
+      - ./krakend-config/plugins:/etc/krakend/plugins # Share the plugins directory
 
   krakend-gateway:
     image: devopsfaith/krakend:watch
@@ -29,6 +29,7 @@ services:
     volumes:
       - ./krakend-config/krakend.json:/etc/krakend/krakend.json
       - ./krakend-config/scripts:/etc/krakend/scripts
+      - ./krakend-config/plugin:/etc/krakend/plugins
     depends_on:
       - hotel-service
       - plugin_builder

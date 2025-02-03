@@ -1,27 +1,25 @@
 {
-    "version": 3,
-    "name": "KrakenD API Gateway",
-    "plugin": {
-        "pattern": ".so",
-        "folder": "/etc/krakend/plugins"
-    },
-    "endpoints": [
+  "version": 3,
+  "name": "KrakenD API Gateway",
+  "plugin": {
+    "pattern": ".so",
+    "folder": "/etc/krakend/plugins"
+  },
+  "endpoints": [
+    {
+      "endpoint": "/data",
+      "method": "GET",
+      "backend": [
         {
-            "endpoint": "/data",
-            "method": "GET",
-            "extra_config": {
-                "plugin/http-client": {
-                    "name": "krakend-header-example"
-                }
-            },
-            "backend": [
-                {
-                    "url_pattern": "/api/data",
-                    "host": [
-                        "http://hotel-service:3000"
-                    ]
-                }
-            ]
+          "url_pattern": "/api/data",
+          "host": ["http://hotel-service:3000"],
+          "extra_config": {
+            "plugin/martian": {
+              "name": ["martian-plugin"]
+            }
+          }
         }
-    ]
+      ]
+    }
+  ]
 }

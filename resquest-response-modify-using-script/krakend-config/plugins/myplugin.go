@@ -1,24 +1,37 @@
-
-
 package main
 
 import (
-	"github.com/luraproject/lura/v2/proxy"
+    "fmt"
+    "errors"
 )
 
-func ModifyRequest(req *proxy.Request) {
-	req.Headers["X-Go-Header"] = []string{"ModifiedByGo"}
+func main() {}
+
+func init() {
+    fmt.Println("Martian plugin loaded!")
 }
 
-func ModifyResponse(res *proxy.Response) {
-	res.Data["message_by_go"] = "Modified by Go Plugin"
+var ModifierRegisterer = registerer("martian-plugin")
+
+type registerer string
+
+func (r registerer) RegisterModifiers(f func(name string, factoryFunc func(map[string]interface{}) func(interface{}) (interface{}, error), appliesToRequest bool, appliesToResponse bool)) {
+    f(string(r), r.modifyHeaders, true, false)
+    fmt.Println(string(r), " registered-piyal!")
 }
 
-var Plugin = struct {
-	Pre  func(*proxy.Request)
-	Post func(*proxy.Response)
-}{
-	Pre:  ModifyRequest,
-	Post: ModifyResponse,
+func (r registerer) modifyHeaders(cfg map[string]interface{}) func(interface{}) (interface{}, error) {
+    return func(input interface{}) (interface{}, error) {
+        resp, ok := input.(ResponseWrapper)
+        if !ok {
+            return nil, errors.New("unknown request type")
+        }
+        // Modify headers here
+        resp.Headers()["X-Custom-Header"] = []string{"MyValue"}
+        return resp, nil
+    }
 }
 
+type ResponseWrapper interface {
+    Headers() map[string][]string
+}

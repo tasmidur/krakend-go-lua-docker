@@ -1,51 +1,31 @@
-// SPDX-License-Identifier: Apache-2.0
-
 package main
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"io"
+    "context"
+    "net/http"
+    "log"
 )
 
-// HeaderRegisterer is the symbol the plugin loader will try to load.
-var HeaderRegisterer = registerer("krakend-header-example")
-
-type registerer string
-
-func (r registerer) RegisterClients(f func(
-	name string,
-	handler func(context.Context, map[string]interface{}) (http.Handler, error),
-)) {
-	f(string(r), r.registerClients)
+// Register the plugin
+func registerHandlers(registerFunc func(name string, handler func(context.Context, map[string]interface{}, http.Handler) (http.Handler, error))) {
+    registerFunc("header_overwrite_plugin", myHandler)
 }
 
-func (r registerer) registerClients(_ context.Context, extra map[string]interface{}) (http.Handler, error) {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Add custom header
-		req.Header.Add("X-Custom-Header", "MyHeaderValue")
+// myHandler modifies the request headers
+func myHandler(ctx context.Context, extra map[string]interface{}, h http.Handler) (http.Handler, error) {
+    return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+        // Log the original request headers
+        log.Printf("Original Headers: %v", req.Header)
 
-		// Log the header for debugging
-		fmt.Println("Added custom header:", req.Header.Get("X-Custom-Header"))
+        // Overwrite a specific header
+        req.Header.Set("X-Custom-Header", "MyValue")
 
-		// Forward the request to the backend
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+        // Log the modified request headers
+        log.Printf("Modified Headers: %v", req.Header)
 
-		// Copy response headers and status code
-		for k, v := range resp.Header {
-			for _, h := range v {
-				w.Header().Add(k, h)
-			}
-		}
-		w.WriteHeader(resp.StatusCode)
-		defer resp.Body.Close()
-		io.Copy(w, resp.Body)
-	}), nil
+        // Call the next handler in the chain
+        h.ServeHTTP(w, req)
+    }), nil
 }
 
 func main() {}
